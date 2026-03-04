@@ -10,6 +10,7 @@ use Laravel\Fortify\Contracts\CreatesNewUsers;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\EmailNewUser;
 use App\Jobs\SendEmailMessage;
+use App\Jobs\SmsJob;
 
 class CreateNewUser implements CreatesNewUsers
 {
@@ -35,6 +36,10 @@ class CreateNewUser implements CreatesNewUsers
         // Mail::to($user->email)->queue(new EmailNewUser($user));
         // Second way to send email using queue is to create a job and dispatch it
         SendEmailMessage::dispatch($user);
+        SmsJob::dispatch($user)->delay(now()->addSeconds(40));
+        $admin = User::first();
+        // Send notification to admin when a new user registers using queue
+        $admin->notify(new \App\Notifications\NewUserRegistered($user));
         return $user;
     }
 }
